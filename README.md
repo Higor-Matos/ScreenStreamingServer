@@ -41,3 +41,6 @@ Caso queira assistir à reportagem sobre este projeto, confira o vídeo disponível
 
 Contribuições são bem-vindas! Sinta-se à vontade para abrir um "issue" ou enviar um "pull request" com melhorias, correções de bugs ou novos recursos.
 
+## Observação sobre o Docker
+
+Este projeto não foi dockerizado, pois exige uma interface gráfica para capturar e transmitir a tela. O Docker é uma plataforma de contêineres que é mais adequada para aplicativos baseados em servidor sem interface gráfica. Portanto, para executar este projeto, recomenda-se executá-lo diretamente em um ambiente local em vez de contêinerizar com o Docker.
