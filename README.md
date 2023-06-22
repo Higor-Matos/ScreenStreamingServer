@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="screenshot.jpeg" alt="Screenshot" width="500">
+  <img src="./Screenshot.jpeg" alt="Screenshot" width="500">
 </p>
 
 # Screen Streaming Server :computer: :tv:

@@ -1,35 +1,29 @@
-﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
+﻿using System.Drawing.Imaging;
 using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 
 namespace ScreenStreamingServer
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            var server = new WebSocketServer(IPAddress.Any, 1234);
+            WebSocketServer server = new(IPAddress.Any, 1234);
             server.AddWebSocketService<ScreenStreaming>("/screen");
             server.Start();
             server.Stop();
         }
     }
 
-    class ScreenStreaming : WebSocketBehavior
+    internal class ScreenStreaming : WebSocketBehavior
     {
         private bool _isStreaming = false;
 
         protected override void OnOpen()
         {
             _isStreaming = true;
-            Task.Run(() => StreamScreen());
+            _ = Task.Run(StreamScreen);
         }
 
         protected override void OnClose(CloseEventArgs e)
@@ -39,25 +33,23 @@ namespace ScreenStreamingServer
 
         private void StreamScreen()
         {
-            var encoder = Encoder.Quality;
-            var parameters = new EncoderParameters(1);
+            Encoder encoder = Encoder.Quality;
+            EncoderParameters parameters = new(1);
             parameters.Param[0] = new EncoderParameter(encoder, 50L);
-            var jpegEncoder = ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == ImageFormat.Jpeg.Guid);
-            var socket = Context.WebSocket;
+            ImageCodecInfo? jpegEncoder = ImageCodecInfo.GetImageDecoders().FirstOrDefault(codec => codec.FormatID == ImageFormat.Jpeg.Guid);
+            WebSocket socket = Context.WebSocket;
 
             while (_isStreaming)
             {
-                using (var bitmap = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height))
-                using (var graphics = Graphics.FromImage(bitmap))
-                using (var memoryStream = new MemoryStream())
+                using Bitmap bitmap = new(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+                using Graphics graphics = Graphics.FromImage(bitmap);
+                using MemoryStream memoryStream = new();
+                graphics.CopyFromScreen(Screen.PrimaryScreen.Bounds.X, Screen.PrimaryScreen.Bounds.Y, 0, 0, Screen.PrimaryScreen.Bounds.Size, CopyPixelOperation.SourceCopy);
+                bitmap.Save(memoryStream, jpegEncoder, parameters);
+                byte[] buffer = memoryStream.ToArray();
+                if (socket.ReadyState == WebSocketState.Open)
                 {
-                    graphics.CopyFromScreen(Screen.PrimaryScreen.Bounds.X, Screen.PrimaryScreen.Bounds.Y, 0, 0, Screen.PrimaryScreen.Bounds.Size, CopyPixelOperation.SourceCopy);
-                    bitmap.Save(memoryStream, jpegEncoder, parameters);
-                    var buffer = memoryStream.ToArray();
-                    if (socket.ReadyState == WebSocketState.Open) 
-                    {
-                        socket.Send(buffer);
-                    }
+                    socket.Send(buffer);
                 }
             }
         }
